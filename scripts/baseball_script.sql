@@ -139,8 +139,10 @@ ORDER BY sbs DESC;
 --ANSWER: Chris Owings, 91%
 	
 
--- 7.  PART 1) From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series?
---	PART 2) Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+-- 7.  PART 1) From 1970 – 2016, what is the largest number of wins for a team that did not win the world series?
+--	PART 2) What is the smallest number of wins for a team that did win the world series?
+--	PART 3) Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. 
+--	PART 4) How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
 
 
 
@@ -153,14 +155,74 @@ FROM (SELECT *
 GROUP BY yearid, name
 ORDER BY MAX(w) DESC
 
+--ANSWER PART 1: Seattle Mariners in 2001 with 116 wins
 
-SELECT yearid, name, w
+
+SELECT yearid, name, MIN(w)
+FROM (SELECT *
 	FROM teams
 	WHERE yearid BETWEEN 1970 AND 2016
-		AND wswin = 'N'
-ORDER BY w DESC
+		AND wswin = 'Y') AS data
+GROUP BY yearid, name
+ORDER BY MIN(w) 
 
---ANSWER TO PART 1: Highest: Seattle Mariners in 2001 with 116 wins, Lowest: Toronto Blue Jays in 1981 with 37 wins
+--ANSWER PART 2: Los Angeles Dodgers in 1981 with 63 wins
+
+
+SELECT yearid, name, MIN(w)
+FROM (SELECT *
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016 AND yearid<>1981
+		AND wswin = 'Y') AS data
+GROUP BY yearid, name
+ORDER BY MIN(w) 
+
+--ANSWER PART 3: St. Louis Cardinals in 2006 with 83 wins
+
+
+--PART 4) How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+
+
+SELECT *
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+	AND yearid<>1981
+
+
+
+SELECT yearid, name, w, wswin
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+	AND yearid<>1981
+ORDER BY yearid ASC, w DESC
+
+
+SELECT yearid, MAX(w)
+FROM (SELECT yearid, name, w, wswin
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+	AND yearid<>1981
+	ORDER BY yearid ASC, w DESC) AS subquery
+GROUP BY yearid
+ORDER BY yearid
+
+
+
+
+SELECT yearid, MAX(w), (SELECT name
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+	AND yearid<>1981
+	ORDER BY yearid ASC, w DESC) AS name
+FROM (SELECT yearid, name, w, wswin
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+	AND yearid<>1981
+	ORDER BY yearid ASC, w DESC) AS subquery
+GROUP BY yearid
+ORDER BY yearid
+
+
 
 
 
@@ -170,7 +232,33 @@ ORDER BY w DESC
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
 
+
+
+	
+
+SELECT DISTINCT homegames.team, teams.name, parks.park_name, (homegames.attendance/homegames.games) AS avg_attendance
+FROM homegames
+LEFT JOIN teams
+ON homegames.team = teams.teamid
+LEFT JOIN parks
+ON homegames.park=parks.park
+WHERE homegames.games>=10
+	AND homegames.year=2016
+ORDER BY avg_attendance DESC
+
+--ANSWER: top 5: Dodgers, Browns, Cardinals, Perfectors, Blue Jays; bottom 5: Rays, Oakland Athletics, Naps, Indians, Bronchos
+
+
+
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+
+SELECT *
+FROM awardsmanagers
+WHERE awardid = 'TSN Manager of the Year'
+	AND lgid = 'AL' OR lgid = 'NL'
+	
+SELECT playerid, awardid, lgid
+FROM awardsmanagers
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
